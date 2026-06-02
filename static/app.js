@@ -103,6 +103,8 @@ async function runAgent() {
     console.error('[Agent] error:', err);
   } finally {
     setLoading(false);
+    agentInput.value = '';
+    agentInput.focus();
   }
 }
 
