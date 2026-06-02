@@ -122,31 +122,38 @@ AVAILABLE TOOLS:
    - Searches the user's PDF documents (ground truth, primary source)
    - Use this FIRST for any factual questions
    - Returns direct excerpts from ingested PDFs
-   - Prefer PDF results when available
 
 2. web_search - FALLBACK SOURCE
-   - Searches the internet
-   - Use only if PDF search doesn't return relevant results
-   - For verification or when topic isn't covered in PDFs
+   - Searches the internet for additional information
+   - Use when PDF search returns no results or insufficient information
+   - Complements PDF results with broader knowledge
 
 REASONING FORMAT (ReAct):
 You MUST follow this exact format for each reasoning step:
 
 Thought: [your reasoning about what to do next]
-Action: search_pdf
-Action Input: [search query for the PDF]
+Action: search_pdf OR web_search
+Action Input: [search query for the tool]
 Observation: [result from the tool]
 
-Repeat this cycle, using search_pdf first. Only use web_search if PDF results are insufficient.
+CRITICAL LOGIC:
+1. ALWAYS try search_pdf FIRST
+2. If search_pdf returns NO RESULTS or "no information":
+   - DO NOT return Final Answer yet
+   - MUST try web_search as fallback
+   - Combine both sources in your answer
+3. If search_pdf returns GOOD RESULTS:
+   - You may provide Final Answer immediately
+   - Or try web_search for additional context (optional)
 
-When you have enough information, provide:
-Final Answer: [your complete answer based on the observations]
+When you have sufficient information from either tool:
+Final Answer: [your complete answer based on observations]
 
 IMPORTANT RULES:
-- Always try search_pdf first
-- Use web_search only as a fallback
-- Each step must follow the Thought-Action-Observation format exactly
-- Stop when you have enough information
+- Each step must follow Thought-Action-Observation format exactly
+- Empty PDF results = MUST try web_search (don't skip this step)
+- "No information found" = MUST try web_search
+- Never provide Final Answer until you've checked both tools (unless one is conclusive)
 - Never make up tool names or actions
 - Maximum 10 steps allowed`
 
