@@ -127,3 +127,7 @@ The server speaks standard MCP over SSE — no custom headers or auth required.
 | `learning_todo` | 16 | `Name`, `Assign`, `Status`, `Target end date` |
 | `links_tracker` | 26 | `Task name`, `Assignee`, `Date`, `Description`, `Due date`, `Effort level`, `Priority`, `Status`, `Task type`, `URL` |
 | `job_portals` | 68 | `Name`, `Category`, `Link`, `Link Type`, `Remarks/Findings`, `Web Description` |
+
+---
+
+[← Home](./) · [Architecture](./architecture) · [Agents](./agents) · [Quick Start](./quickstart)

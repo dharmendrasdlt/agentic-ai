@@ -105,3 +105,7 @@ sequenceDiagram
 ---
 
 See **[Agents](./agents)** and **[MCP](./mcp)** for module-level detail.
+
+---
+
+[← Home](./) · [Agents](./agents) · [MCP](./mcp) · [Quick Start](./quickstart)

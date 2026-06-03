@@ -149,3 +149,7 @@ Response:
 ```
 
 A web UI is served at `http://localhost:8082`.
+
+---
+
+[← Home](./) · [Architecture](./architecture) · [MCP](./mcp) · [Quick Start](./quickstart)

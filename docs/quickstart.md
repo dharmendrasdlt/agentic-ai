@@ -101,3 +101,7 @@ Flip `ANTHROPIC_CREDIT_BALANCE` to `false` to force Ollama without removing the 
 ---
 
 See **[Architecture](./architecture)** for the full system design.
+
+---
+
+[← Home](./) · [Architecture](./architecture) · [Agents](./agents) · [MCP](./mcp)
