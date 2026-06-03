@@ -22,7 +22,18 @@ Get the full system running in about five minutes.
 
 ---
 
-## 1. Configure
+## 1. Clone the Repository
+
+The agent runs locally, so you need the source on your machine first:
+
+```bash
+git clone https://github.com/dharmendrra/agentic-ai.git
+cd agentic-ai
+```
+
+---
+
+## 2. Configure
 
 `config.json` files are gitignored because they contain API keys. Copy the examples and fill in your keys:
 
@@ -34,7 +45,7 @@ cp mcp/config.example.json   mcp/config.json
 
 ---
 
-## 2. Start MongoDB
+## 3. Start MongoDB
 
 ```bash
 mongosh --eval "db.adminCommand({ping:1})"
@@ -42,7 +53,7 @@ mongosh --eval "db.adminCommand({ping:1})"
 
 ---
 
-## 3. Start the MCP Server
+## 4. Start the MCP Server
 
 ```bash
 cd mcp && go run .
@@ -52,7 +63,7 @@ cd mcp && go run .
 
 ---
 
-## 4. Start the Agent
+## 5. Start the Agent
 
 ```bash
 cd agents && go run .
@@ -63,7 +74,7 @@ cd agents && go run .
 
 ---
 
-## 5. Query the Agent
+## 6. Query the Agent
 
 ```bash
 curl -X POST http://localhost:8082/api/agent/query \

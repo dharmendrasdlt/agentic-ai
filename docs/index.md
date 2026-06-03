@@ -61,6 +61,8 @@ See [Quick Start](./quickstart) for detailed setup instructions.
 
 ```bash
 # 1. Clone and configure
+git clone https://github.com/dharmendrra/agentic-ai.git
+cd agentic-ai
 cp agents/config.example.json agents/config.json
 cp mcp/config.example.json mcp/config.json
 
