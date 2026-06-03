@@ -1,179 +1,130 @@
-# OmniRAG Agent — ReAct Loop with PDF & Web Search
+# agentic-ai
 
-A Go-based ReAct agent endpoint that uses multi-step reasoning with Ollama. It automatically chooses between PDF search (primary) and web search (fallback) tools to answer questions.
+A local agentic AI system built in Go. An LLM-powered ReAct agent that reasons over PDF documents, the web, and a MongoDB database — all wired together via the Model Context Protocol (MCP).
 
-## Features
+---
 
-- **ReAct Loop**: Structured reasoning with Thought → Action → Observation cycles
-- **PDF-First Strategy**: Prefers PDF search results, uses web as fallback
-- **Retry Logic**: Automatic retries with exponential backoff (configurable max retries)
-- **Step Limit**: Max steps safeguard prevents infinite loops
-- **Token Control**: Configurable max_tokens on Ollama calls
-- **Graceful Degradation**: Returns best answer found if max steps hit (not an error)
-- **Clean UI**: Matches existing OmniRAG theme with Tailwind dark mode
+## Repository Structure
 
-## Screenshots
-
-**Query Interface** — Ask complex questions with multi-step reasoning:
-
-<img src="./docs/screenshots/query-interface.png" alt="ReAct Agent - Query Interface" width="100%">
-
-**Reasoning Output** — See step-by-step reasoning and final answers:
-
-<img src="./docs/screenshots/reasoning-results.png" alt="ReAct Agent - Reasoning Results" width="100%">
-
-## UI Features
-
-The web interface at `http://localhost:8082/agent` provides:
-
-- **Dark Theme**: Matches OmniRAG's sleek emerald-on-black design
-- **Query Input**: Textarea for complex multi-step questions
-- **Real-time Feedback**: Visual indicators while reasoning
-- **Step Visibility**: Shows ReAct reasoning steps as they execute
-- **Formatted Answers**: Final answer with source context
-- **Error Handling**: User-friendly error messages
-- **Keyboard Shortcuts**: `Cmd+Enter` / `Ctrl+Enter` to submit
-
-## Configuration
-
-Edit `config.json`:
-
-```json
-{
-  "OLLAMA_HOST": "http://localhost:11434",
-  "OLLAMA_MODEL": "gemma4:e4b",
-  "TAVILY_API_KEY": "your-api-key",
-  "MAX_STEPS": 10,
-  "MAX_RETRIES": 3,
-  "MAX_TOKENS": 1024,
-  "SEARCH_ENDPOINT": "http://localhost:8081/api/search"
-}
+```
+agentic-ai/
+├── agents/   — ReAct agent (Ollama + PDF search + web search + MCP client)
+└── mcp/      — MongoDB MCP server (exposes agentic_mcps DB as MCP tools)
 ```
 
-- **OLLAMA_HOST**: Local Ollama instance URL
-- **OLLAMA_MODEL**: Model to use for reasoning
-- **TAVILY_API_KEY**: API key for web search (get from https://tavily.com)
-- **MAX_STEPS**: Max ReAct loop iterations
-- **MAX_RETRIES**: Retry failed HTTP calls up to this many times
-- **MAX_TOKENS**: Token limit per Ollama call
-- **SEARCH_ENDPOINT**: URL of your PDF search endpoint
+---
 
-## API Endpoints
+## Architecture
 
-### POST /api/agent/query
+```mermaid
+graph TD
+    subgraph agentic-ai
+        subgraph agents
+            A[ReAct Agent<br/>:8082]
+            T1[search_pdf tool]
+            T2[web_search tool]
+            T3[MCP client tools<br/>discovered via tools/list]
+        end
 
-**Request:**
-```json
-{
-  "query": "How does the PDF explain pump maintenance?"
-}
+        subgraph mcp
+            M[MCP Server<br/>:8083 / SSE]
+            DB[(MongoDB<br/>agentic_mcps)]
+            C1[learning_todo]
+            C2[links_tracker]
+            C3[job_portals]
+        end
+    end
+
+    LLM[Ollama LLM] -->|ReAct loop| A
+    A --> T1 --> PDF[PDF Search<br/>:8081]
+    A --> T2 --> Web[Tavily Web Search]
+    A --> T3 -->|MCP over SSE| M
+    M -->|CRUD| DB
+    DB --> C1
+    DB --> C2
+    DB --> C3
 ```
 
-**Response:**
-```json
-{
-  "answer": "The final answer from the agent's reasoning..."
-}
+---
+
+## How it works
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as Agent :8082
+    participant L as Ollama LLM
+    participant M as MCP Server :8083
+    participant DB as MongoDB
+
+    U->>A: POST /api/agent/query
+    A->>M: initialize + tools/list
+    M-->>A: tool definitions
+
+    loop ReAct steps
+        A->>L: Thought prompt
+        L-->>A: Action + Action Input
+        alt search_pdf / web_search
+            A->>A: call local tool
+        else db_query / db_insert / ...
+            A->>M: tools/call
+            M->>DB: CRUD
+            DB-->>M: result
+            M-->>A: CallToolResult
+        end
+        A->>L: Observation
+    end
+
+    L-->>A: Final Answer
+    A-->>U: JSON response
 ```
 
-### GET /agent
+---
 
-Web UI page for interactive queries.
+## Modules
 
-## Running
+### [`agents/`](./agents/)
+ReAct loop agent powered by a local Ollama model. On startup it connects to the MCP server, calls `tools/list` to discover available DB tools, and injects their real descriptions into the system prompt.
+
+| Tool | Source |
+|---|---|
+| `search_pdf` | Local PDF vector search endpoint |
+| `web_search` | Tavily API |
+| `list_collections`, `query_documents`, `insert_document`, `update_document`, `delete_document` | Discovered from MCP server at runtime |
+
+### [`mcp/`](./mcp/)
+Standalone MCP server exposing a MongoDB database over HTTP/SSE. Any MCP-compatible client (Claude Desktop, Cursor, or a custom agent) can connect to it — no agent-specific coupling.
+
+SSE endpoint: `http://localhost:8083/sse`
+
+---
+
+## Quick Start
 
 ```bash
-# Build
-go build -o agent main.go
+# 1. Start MongoDB
+mongosh --eval "db.adminCommand({ping:1})"
 
-# Run on port 8082 (default)
-./agent
+# 2. Start the MCP server
+cd mcp && go run .
 
-# Run on custom port
-./agent -port 8080
+# 3. Start the agent
+cd agents && go run .
+
+# 4. Query the agent
+curl -X POST http://localhost:8082/api/agent/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Show me all free job portals"}'
 ```
 
-Server logs will show:
-```
-Agent server listening on http://localhost:8082
-Endpoint: POST http://localhost:8082/api/agent/query
-UI: http://localhost:8082/agent
-```
+---
 
-## Tools
+## Prerequisites
 
-The agent has access to two tools:
-
-### search_pdf
-- Primary tool for factual questions
-- Calls your PDF search endpoint
-- Returns matched chunks from vector DB
-- Tool description emphasizes PDF-first preference
-
-### web_search
-- Fallback for info not in PDF
-- Uses Tavily API for web search
-- Only called if PDF results insufficient
-- Returns top 3 web results
-
-## System Prompt
-
-The agent's behavior is guided by a system prompt that:
-1. Positions PDF as primary source
-2. Positions web as fallback only
-3. Requires ReAct format: Thought → Action → Observation
-4. Enforces step limits
-5. Prompts for "Final Answer" format
-
-## Guardrails
-
-1. **Max Steps**: Stops loop at `MAX_STEPS`, returns best answer so far
-2. **Retry Logic**: HTTP calls retry up to `MAX_RETRIES` times with backoff
-3. **Timeout Safe**: Single Ollama call timeout handled gracefully
-4. **Token Control**: Every Ollama request respects `MAX_TOKENS`
-
-## Tool Descriptions
-
-Tool prompts are carefully crafted to guide the LLM:
-
-- `search_pdf` description emphasizes it's the "primary source" with "grounded facts"
-- `web_search` description indicates it's for "additional context" or "verification"
-- System prompt explicitly prioritizes PDF-first approach
-
-## UI Features
-
-- Dark theme matching OmniRAG retrieval UI
-- Real-time answer display
-- Reasoning step indicator
-- Error handling with user-friendly messages
-- Keyboard shortcut: `Cmd+Enter` / `Ctrl+Enter` to submit
-
-## Example Queries
-
-```
-"How does the PDF explain pump maintenance? What are the main steps?"
-"What does section 4.2 cover? Check if there are related articles online."
-"Compare the PDF's approach with current industry standards online."
-```
-
-## Integration
-
-To integrate with your existing setup:
-
-1. Update `SEARCH_ENDPOINT` to point to your `/api/search` endpoint
-2. Set `TAVILY_API_KEY` if you want web search enabled
-3. Ensure Ollama is running on `OLLAMA_HOST`
-4. Run agent on a different port than your main API (default 8082)
-
-Your main app can:
-- Call `/api/agent/query` for programmatic access
-- Link to `/agent` for the web UI
-- Proxy both endpoints if on different hosts
-
-## Documentation
-
-- **[SETUP.md](docs/SETUP.md)** - Build, run, configure, deploy (Docker/nginx/systemd), troubleshoot
-- **[DFD.md](docs/DFD.md)** - Full data flow diagram (Mermaid) — exact services and transformations at every step
-- **[TOOLS_ARCHITECTURE.md](docs/TOOLS_ARCHITECTURE.md)** - Tool interface, how to add new tools, design decisions
-- **[LOGGING.md](docs/LOGGING.md)** - Log prefixes and how to debug the ReAct loop
-- **[PDF_ENDPOINT_SSE_FORMAT.md](docs/PDF_ENDPOINT_SSE_FORMAT.md)** - Real SSE payload format from the search endpoint
+| Dependency | Purpose |
+|---|---|
+| Go 1.21+ | Build both modules |
+| MongoDB | Backing store for MCP server |
+| Ollama | Local LLM inference |
+| Tavily API key | Web search fallback |
+| PDF search endpoint | Optional — `http://localhost:8081/api/search` |
