@@ -69,16 +69,16 @@ func (m *Manager) BuildPromptSection() string {
 	var sb strings.Builder
 	for _, s := range m.Schemas() {
 		sb.WriteString(fmt.Sprintf("- %s: %s\n", s.Name, s.Description))
-		if props := formatInputSchema(s.InputSchema); props != "" {
+		if props := FormatInputSchema(s.InputSchema); props != "" {
 			sb.WriteString(fmt.Sprintf("  Input: %s\n", props))
 		}
 	}
 	return sb.String()
 }
 
-// formatInputSchema renders the required/optional params from a JSON schema map
+// FormatInputSchema renders the required/optional params from a JSON schema map
 // as a compact one-line string for the system prompt.
-func formatInputSchema(schema map[string]any) string {
+func FormatInputSchema(schema map[string]any) string {
 	if schema == nil {
 		return ""
 	}

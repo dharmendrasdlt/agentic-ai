@@ -1,6 +1,7 @@
 # Binaries
 agent
 agentic-ai
+/mcp/mcp
 *.exe
 *.dll
 *.so

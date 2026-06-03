@@ -35,22 +35,14 @@ func Connect(ctx context.Context, serverURL string) (*MCPClient, error) {
 	return &MCPClient{cli: c}, nil
 }
 
-// DiscoverTools calls tools/list and returns a slice of Tool ready to Register.
-// Each tool carries its full schema from the server — no separate description string needed.
-func (m *MCPClient) DiscoverTools(ctx context.Context) ([]Tool, error) {
+// ListToolsRaw calls tools/list on the server and returns the raw tool definitions.
+// The agent LLM discovers these by calling the MCP tool with action: "list_tools".
+func (m *MCPClient) ListToolsRaw(ctx context.Context) ([]mcp.Tool, error) {
 	result, err := m.cli.ListTools(ctx, mcp.ListToolsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("tools/list: %w", err)
 	}
-
-	tools := make([]Tool, 0, len(result.Tools))
-	for _, t := range result.Tools {
-		tools = append(tools, &mcpToolCall{
-			client: m,
-			schema: mcpToolToSchema(t),
-		})
-	}
-	return tools, nil
+	return result.Tools, nil
 }
 
 // Call invokes a named tool on the MCP server with JSON-encoded arguments.
@@ -76,19 +68,6 @@ func (m *MCPClient) Call(ctx context.Context, toolName, inputJSON string) (strin
 	return extractText(res.Content), nil
 }
 
-// mcpToolCall implements the Tool interface for a single MCP server tool.
-type mcpToolCall struct {
-	schema ToolSchema
-	client *MCPClient
-}
-
-func (t *mcpToolCall) Name() string        { return t.schema.Name }
-func (t *mcpToolCall) Schema() ToolSchema  { return t.schema }
-
-func (t *mcpToolCall) Execute(input string) (string, error) {
-	return t.client.Call(context.Background(), t.schema.Name, input)
-}
-
 // extractText pulls the first TextContent out of a tool result.
 func extractText(content []mcp.Content) string {
 	for _, c := range content {
@@ -97,16 +76,4 @@ func extractText(content []mcp.Content) string {
 		}
 	}
 	return ""
-}
-
-// mcpToolToSchema converts an mcp.Tool definition to the standard ToolSchema.
-func mcpToolToSchema(t mcp.Tool) ToolSchema {
-	data, _ := json.Marshal(t.InputSchema)
-	var inputSchema map[string]any
-	json.Unmarshal(data, &inputSchema)
-	return ToolSchema{
-		Name:        t.Name,
-		Description: t.Description,
-		InputSchema: inputSchema,
-	}
 }

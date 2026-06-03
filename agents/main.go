@@ -36,24 +36,17 @@ func main() {
 	toolMgr.Register(tools.NewPDFSearchTool(cfg.SearchEndpoint, cfg.MaxRetries))
 	toolMgr.Register(tools.NewWebSearchTool(cfg.TavilyAPIKey, cfg.MaxRetries))
 
-	// Discover MCP tools via tools/list
+	// Connect to MCP server (LLM will discover tools dynamically via action: "list_tools")
 	mcpURL := cfg.MCPServerURL
 	if mcpURL == "" {
 		mcpURL = "http://localhost:8083"
 	}
 	mcpClient, err := tools.Connect(context.Background(), mcpURL)
 	if err != nil {
-		log.Printf("[MCP] WARNING: Could not connect to MCP server at %s: %v (DB tools unavailable)", mcpURL, err)
+		log.Printf("[MCP] WARNING: Could not connect to MCP server at %s: %v (MCP tool unavailable)", mcpURL, err)
 	} else {
-		discovered, err := mcpClient.DiscoverTools(context.Background())
-		if err != nil {
-			log.Printf("[MCP] WARNING: tools/list failed: %v", err)
-		} else {
-			for _, t := range discovered {
-				toolMgr.Register(t)
-			}
-			log.Printf("[MCP] Discovered %d tools from %s", len(discovered), mcpURL)
-		}
+		toolMgr.Register(tools.NewMCPTool(mcpClient))
+		log.Printf("[MCP] Registered MCP tool (LLM will discover resources dynamically)")
 	}
 
 	log.Printf("[MAIN] Tool registry: %d tools", len(toolMgr.ListTools()))
