@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" font-family="Inter, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .store{ fill:#fef9c3; stroke:#ca8a04; stroke-width:2px; }
+      .vec  { fill:#ede9fe; stroke:#7c3aed; stroke-width:2px; }
+      .ui   { fill:#ffffff; stroke:#94a3b8; stroke-width:1.6px; }
+      .panel{ fill:#f8fafc; stroke:#cbd5e1; stroke-width:1.6px; }
+      .title{ font-size:24px; font-weight:700; fill:#0f172a; }
+      .mono { font-size:20px; font-weight:500; fill:#0f172a; font-family:'JetBrains Mono', ui-monospace, monospace; }
+      .sub  { font-size:18px; fill:#475569; }
+      .hdr  { font-size:18px; font-weight:700; fill:#64748b; }
+      .edge { stroke:#2563eb; stroke-width:2.5px; fill:none; }
+      .lbl  { font-size:17px; fill:#334155; paint-order:stroke; stroke:#ffffff; stroke-width:6px; stroke-linejoin:round; }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="720" fill="#ffffff"/>
+
+  <!-- edges -->
+  <path class="edge" d="M320,205 L466,205" marker-end="url(#arrow)"/>
+  <path class="edge" d="M466,255 L320,255" marker-end="url(#arrow)"/>
+  <path class="edge" d="M732,205 L876,205" marker-end="url(#arrow)"/>
+  <path class="edge" d="M876,250 L732,250" marker-end="url(#arrow)"/>
+  <path class="edge" d="M600,302 L600,398" marker-end="url(#arrow)"/>
+
+  <text class="lbl" x="393" y="192" text-anchor="middle">connect · SSE</text>
+  <text class="lbl" x="393" y="278" text-anchor="middle">tool schemas</text>
+  <text class="lbl" x="804" y="192" text-anchor="middle">tools/call · CRUD</text>
+  <text class="lbl" x="804" y="278" text-anchor="middle">result</text>
+  <text class="lbl" x="636" y="354" text-anchor="start">advertises</text>
+
+  <!-- MCP clients -->
+  <rect class="ui" x="70" y="120" width="250" height="205" rx="12"/>
+  <text class="title" x="195" y="162" text-anchor="middle">MCP Clients</text>
+  <text class="sub"   x="195" y="202" text-anchor="middle">Claude Desktop</text>
+  <text class="sub"   x="195" y="232" text-anchor="middle">Cursor</text>
+  <text class="sub"   x="195" y="262" text-anchor="middle">Custom agent</text>
+  <text class="sub"   x="195" y="296" text-anchor="middle">(any MCP client)</text>
+
+  <!-- MCP server -->
+  <rect class="vec" x="466" y="150" width="266" height="152" rx="12"/>
+  <text class="title" x="599" y="206" text-anchor="middle">MCP Server</text>
+  <text class="sub"   x="599" y="236" text-anchor="middle">:8083 · SSE</text>
+  <text class="sub"   x="599" y="262" text-anchor="middle">/sse · /message</text>
+
+  <!-- MongoDB -->
+  <rect class="store" x="876" y="158" width="250" height="140" rx="12"/>
+  <text class="title" x="1001" y="216" text-anchor="middle">MongoDB</text>
+  <text class="sub"   x="1001" y="246" text-anchor="middle">agentic_mcps</text>
+
+  <!-- Tools panel -->
+  <rect class="panel" x="430" y="398" width="340" height="288" rx="12"/>
+  <text class="hdr"  x="460" y="438" text-anchor="start">TOOLS · discovered via tools/list</text>
+  <text class="mono" x="460" y="486" text-anchor="start">list_collections</text>
+  <text class="mono" x="460" y="524" text-anchor="start">query_documents</text>
+  <text class="mono" x="460" y="562" text-anchor="start">insert_document</text>
+  <text class="mono" x="460" y="600" text-anchor="start">update_document</text>
+  <text class="mono" x="460" y="638" text-anchor="start">delete_document</text>
+</svg>
