@@ -1,0 +1,24 @@
+graph LR
+    classDef agent fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a;
+    classDef tool fill:#ffffff,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+    classDef server fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a;
+    classDef store fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#0f172a;
+    classDef ext fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
+
+    LLM["🧠 LLM Backend<br/>Claude · Ollama"]:::ext
+    A["⚙️ ReAct Agent<br/>:8082"]:::agent
+
+    T1["search_pdf"]:::tool
+    T2["web_search"]:::tool
+    T3["mcp · umbrella tool"]:::tool
+
+    M["🗄️ MongoDB MCP Server<br/>:8083 · SSE"]:::server
+    DB[("MongoDB<br/>agentic_mcps")]:::store
+    PDF["PDF Search<br/>:8081"]:::ext
+    WEB["Tavily Web Search"]:::ext
+
+    LLM -. "ReAct loop" .-> A
+    A --> T1 --> PDF
+    A --> T2 --> WEB
+    A --> T3 -- "MCP / SSE<br/>discover + call" --> M
+    M -- "CRUD" --> DB

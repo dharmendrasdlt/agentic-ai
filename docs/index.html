@@ -127,6 +127,13 @@
   pre .k { color: #7dd3fc; }
   pre .s { color: #86efac; }
 
+  /* ---------- Figure / diagram ---------- */
+  .figure { margin: 34px 0 0; }
+  .figure-frame { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); text-align: center; }
+  .figure img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .figure figcaption { color: var(--text-faint); font-size: .86rem; margin-top: 12px; }
+  .sub { font-size: 1.25rem; font-weight: 700; margin: 52px 0 0; letter-spacing: -0.02em; }
+
   /* ---------- Table ---------- */
   .tbl { width: 100%; border-collapse: collapse; margin-top: 38px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
   .tbl th, .tbl td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: .94rem; }
@@ -290,22 +297,28 @@
 <!-- ===================== ARCHITECTURE ===================== -->
 <section id="architecture">
   <div class="wrap">
-    <div class="eyebrow">How a query flows</div>
-    <h2>The ReAct loop, end to end</h2>
-    <p class="lead">A single endpoint runs the full reason-act-observe cycle, discovering and calling tools over MCP until the LLM produces a grounded final answer.</p>
+    <div class="eyebrow">System design</div>
+    <h2>How it all fits together</h2>
+    <p class="lead">Two decoupled Go services and a pluggable LLM brain, joined by an open protocol. The agent reasons; the MCP server exposes data as discoverable tools; nothing is hardcoded between them.</p>
 
-    <pre><span class="c">// POST /api/agent/query</span>
-<span class="k">1.</span> Connect + handshake   <span class="c">agent → MCP server: initialize</span>
-<span class="k">2.</span> Discover tools        <span class="c">mcp action: list_tools → tools/list</span>
-<span class="k">loop</span> ReAct steps
-   <span class="k">→</span> Thought             <span class="c">LLM (Claude | Ollama) reasons about next step</span>
-   <span class="k">→</span> Action + Input      <span class="c">search_pdf · web_search · mcp(query/insert/...)</span>
-   <span class="k">→</span> Execute             <span class="c">local tool, or tools/call → MongoDB CRUD</span>
-   <span class="k">→</span> Observation         <span class="c">result fed back into the loop</span>
-<span class="k">end</span>
-<span class="k">3.</span> Final Answer          <span class="c">→ JSON response to the user</span></pre>
+    <figure class="figure">
+      <div class="figure-frame">
+        <img src="diagrams/architecture.png" alt="agentic-ai system architecture: ReAct agent on port 8082 calling search_pdf, web_search, and a single mcp umbrella tool that connects over MCP/SSE to the MongoDB MCP server on port 8083, which performs CRUD against the agentic_mcps database. A pluggable LLM backend (Claude or Ollama) drives the ReAct loop." />
+        <figcaption>System data-flow — ReAct agent, three tool sources, and a standalone MongoDB MCP server over SSE.</figcaption>
+      </div>
+    </figure>
 
-    <div class="grid grid-2" style="margin-top:28px;">
+    <h3 class="sub">The ReAct loop, end to end</h3>
+    <p class="lead" style="margin-top:8px;">A single endpoint runs the full reason → act → observe cycle, discovering and calling tools over MCP until the LLM produces a grounded final answer.</p>
+
+    <figure class="figure">
+      <div class="figure-frame">
+        <img src="diagrams/react-sequence.png" alt="ReAct loop sequence diagram: the user posts a query to the agent, which initializes and lists tools from the MCP server, then loops through Thought, Action, tool execution (local search_pdf/web_search or MCP tools/call to MongoDB), and Observation, before returning a final JSON answer." />
+        <figcaption>Request lifecycle — discovery via <code>tools/list</code>, then iterative Thought → Action → Observation until the final answer.</figcaption>
+      </div>
+    </figure>
+
+    <div class="grid grid-2" style="margin-top:40px;">
       <div class="card">
         <h3>Agent side</h3>
         <p>Embeds the query in a dynamically-built ReAct prompt, selects the LLM backend from config, and orchestrates tool calls. It knows MCP only as a black box — one <code>mcp</code> tool whose operations it discovers, never hardcodes.</p>
